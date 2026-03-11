@@ -1,0 +1,29 @@
+{
+  "name": "slideshow",
+  "description": "Create a slideshow video from text slides with optional images",
+  "template": "slideshow",
+  "parameters": {
+    "type": "object",
+    "required": ["slides"],
+    "properties": {
+      "slides": {
+        "type": "array",
+        "description": "List of slides",
+        "items": {
+          "type": "object",
+          "required": ["text"],
+          "properties": {
+            "text": { "type": "string", "description": "Slide text" },
+            "imageSrc": { "type": "string", "description": "Background image path" },
+            "notes": { "type": "string", "description": "Speaker notes" }
+          }
+        }
+      },
+      "secondsPerSlide": { "type": "number", "default": 10 },
+      "bgColor": { "type": "string", "default": "#1a1a2e" },
+      "textColor": { "type": "string", "default": "#ffffff" },
+      "fontSize": { "type": "number", "default": 56 },
+      "output": { "type": "string", "default": "out/slideshow.mp4" }
+    }
+  }
+}

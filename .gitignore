@@ -1,0 +1,25 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.egg-info/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Secrets
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Output
+out/
+
+# Playwright browsers (installed locally)

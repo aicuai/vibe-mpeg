@@ -1,0 +1,12 @@
+{
+  "name": "demo",
+  "description": "Demo video with three title cards",
+  "template": "demo",
+  "defaultDuration": 10,
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "output": { "type": "string", "default": "out/demo.mp4" }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f0f23;
+  font-family: -apple-system, 'Helvetica Neue', sans-serif;
+}
+#title {
+  font-size: 72px;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.8);
+}
+</style>
+</head>
+<body>
+<div id="title"></div>
+<script>
+const fps = window.__VIBE_FPS__ || 30;
+const scenes = [
+  { text: 'vibe-mpeg', start: 0, end: 100 },
+  { text: 'Open Video Editing', start: 100, end: 200 },
+  { text: 'Powered by Qwen3', start: 200, end: 300 },
+];
+
+const titleEl = document.getElementById('title');
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+window.__VIBE_RENDER_FRAME__ = function(frame) {
+  const scene = scenes.find(s => frame >= s.start && frame < s.end);
+  if (!scene) {
+    titleEl.style.opacity = 0;
+    return;
+  }
+
+  const localFrame = frame - scene.start;
+  const duration = scene.end - scene.start;
+  const fadeFrames = Math.round(fps * 0.4);
+
+  titleEl.textContent = scene.text;
+
+  let opacity = 1;
+  let scale = 1;
+  if (localFrame < fadeFrames) {
+    const t = localFrame / fadeFrames;
+    opacity = easeOutCubic(t);
+    scale = 0.8 + 0.2 * easeOutCubic(t);
+  } else if (localFrame > duration - fadeFrames) {
+    const t = (duration - localFrame) / fadeFrames;
+    opacity = t;
+  }
+
+  titleEl.style.opacity = opacity;
+  titleEl.style.transform = `scale(${scale})`;
+};
+
+if (typeof window.__VIBE_FRAME__ === 'number') {
+  window.__VIBE_RENDER_FRAME__(window.__VIBE_FRAME__);
+}
+</script>
+</body>
+</html>

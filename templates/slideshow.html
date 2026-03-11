@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: -apple-system, 'Helvetica Neue', 'Noto Sans JP', sans-serif;
+}
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: none;
+}
+.slide.active {
+  opacity: 1;
+}
+.slide-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.3;
+}
+.slide-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 60px;
+  max-width: 1600px;
+}
+.slide-counter {
+  font-size: 24px;
+  opacity: 0.6;
+  margin-bottom: 40px;
+}
+.slide-text {
+  font-size: 56px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+.slide-notes {
+  font-size: 20px;
+  opacity: 0.5;
+  margin-top: 40px;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<script>
+// vibe-mpeg template API:
+//   window.__VIBE_PROPS__  = { slides, secondsPerSlide, bgColor, textColor, fontSize }
+//   window.__VIBE_FRAME__  = current frame number
+//   window.__VIBE_FPS__    = frames per second
+//   window.__VIBE_RENDER_FRAME__(frame) = called each frame
+
+const props = window.__VIBE_PROPS__ || {
+  slides: [{ text: 'Slide 1' }, { text: 'Slide 2' }, { text: 'Slide 3' }],
+  secondsPerSlide: 10,
+  bgColor: '#1a1a2e',
+  textColor: '#ffffff',
+  fontSize: 56,
+};
+
+const slides = props.slides || [];
+const secsPerSlide = props.secondsPerSlide || 10;
+const bgColor = props.bgColor || '#1a1a2e';
+const textColor = props.textColor || '#ffffff';
+const fontSize = props.fontSize || 56;
+const fps = window.__VIBE_FPS__ || 30;
+const framesPerSlide = Math.round(secsPerSlide * fps);
+
+// Build DOM
+const container = document.getElementById('container');
+slides.forEach((slide, i) => {
+  const el = document.createElement('div');
+  el.className = 'slide';
+  el.dataset.index = i;
+  el.style.backgroundColor = bgColor;
+  el.style.color = textColor;
+
+  let html = '';
+  if (slide.imageSrc) {
+    html += `<div class="slide-bg" style="background-image:url('${slide.imageSrc}')"></div>`;
+  }
+  html += `<div class="slide-content">`;
+  html += `<div class="slide-counter">${i + 1} / ${slides.length}</div>`;
+  html += `<div class="slide-text" style="font-size:${fontSize}px">${slide.text}</div>`;
+  if (slide.notes) {
+    html += `<div class="slide-notes">${slide.notes}</div>`;
+  }
+  html += `</div>`;
+  el.innerHTML = html;
+  container.appendChild(el);
+});
+
+const slideEls = document.querySelectorAll('.slide');
+
+// Easing functions
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+window.__VIBE_RENDER_FRAME__ = function(frame) {
+  const slideIndex = Math.min(Math.floor(frame / framesPerSlide), slides.length - 1);
+  const localFrame = frame - slideIndex * framesPerSlide;
+  const fadeFrames = Math.round(fps * 0.5);
+
+  slideEls.forEach((el, i) => {
+    if (i === slideIndex) {
+      el.classList.add('active');
+      // Fade-in animation
+      const progress = Math.min(localFrame / fadeFrames, 1);
+      const eased = easeOutCubic(progress);
+      el.style.opacity = eased;
+      const content = el.querySelector('.slide-content');
+      if (content) {
+        content.style.transform = `translateY(${(1 - eased) * 30}px)`;
+      }
+    } else {
+      el.classList.remove('active');
+      el.style.opacity = 0;
+    }
+  });
+};
+
+// Initial render
+if (typeof window.__VIBE_FRAME__ === 'number') {
+  window.__VIBE_RENDER_FRAME__(window.__VIBE_FRAME__);
+}
+</script>
+</body>
+</html>

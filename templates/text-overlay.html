@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: -apple-system, 'Helvetica Neue', 'Noto Sans JP', sans-serif;
+}
+#text {
+  text-align: center;
+  padding: 40px;
+  max-width: 1600px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+</style>
+</head>
+<body>
+<div id="text"></div>
+<script>
+const props = window.__VIBE_PROPS__ || {
+  text: 'Hello, vibe-mpeg!',
+  fontSize: 80,
+  color: '#ffffff',
+  backgroundColor: '#1a1a2e',
+};
+
+const fps = window.__VIBE_FPS__ || 30;
+const totalFrames = window.__VIBE_TOTAL_FRAMES__ || 150;
+
+const textEl = document.getElementById('text');
+textEl.textContent = props.text || 'Hello';
+textEl.style.fontSize = (props.fontSize || 80) + 'px';
+textEl.style.color = props.color || '#ffffff';
+document.body.style.backgroundColor = props.backgroundColor || '#1a1a2e';
+
+function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+window.__VIBE_RENDER_FRAME__ = function(frame) {
+  const fadeInFrames = Math.round(fps * 0.5);
+  const fadeOutStart = totalFrames - Math.round(fps * 0.5);
+
+  // Fade in
+  let opacity = 1;
+  let scale = 1;
+  if (frame < fadeInFrames) {
+    const t = frame / fadeInFrames;
+    opacity = t;
+    scale = easeOutBack(t);
+  }
+  // Fade out
+  if (frame > fadeOutStart) {
+    const t = (frame - fadeOutStart) / (totalFrames - fadeOutStart);
+    opacity = 1 - t;
+  }
+
+  textEl.style.opacity = Math.max(0, Math.min(1, opacity));
+  textEl.style.transform = `scale(${scale})`;
+};
+
+if (typeof window.__VIBE_FRAME__ === 'number') {
+  window.__VIBE_RENDER_FRAME__(window.__VIBE_FRAME__);
+}
+</script>
+</body>
+</html>
