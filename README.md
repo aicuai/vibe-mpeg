@@ -7,7 +7,7 @@
 ## コンセプト
 
 - **完全オフライン** — Ollama + Qwen3 で AI駆動の動画編集。Claude不要
-- **ライセンスがクリーン** — Remotion等のプロプライエタリ製品を使わない。HTML/CSS + Playwright (MIT) + ffmpeg (外部コマンド)
+- **ライセンスがクリーン** — プロプライエタリ製品を使わない。HTML/CSS + Playwright (MIT) + ffmpeg (外部コマンド)
 - **Mac専用** — macOSにインストール済みのツール・フォントを活用
 - **スキルベース** — JSON定義のスキルをLLMが呼び出して動画を生成
 - **vibe-local連携** — [vibe-local](https://github.com/aicuai/vibe-local) がインストール済みなら自動検出
