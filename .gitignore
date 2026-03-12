@@ -22,4 +22,10 @@ __pycache__/
 # Output
 out/
 
+# Media (user files)
+media/
+
+# User config
+.vibe-mpeg.json
+
 # Playwright browsers (installed locally)

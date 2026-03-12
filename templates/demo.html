@@ -21,27 +21,58 @@ body {
   text-align: center;
   opacity: 0;
   transform: scale(0.8);
+  line-height: 1.3;
+}
+#sub {
+  position: absolute;
+  bottom: 80px;
+  font-size: 28px;
+  color: #8b949e;
+  text-align: center;
+  opacity: 0;
+  width: 80%;
+}
+#badge {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  font-size: 16px;
+  color: #0b84f3;
+  font-weight: 600;
+  opacity: 0;
+  letter-spacing: 2px;
 }
 </style>
 </head>
 <body>
+<div id="badge">vibe-mpeg</div>
 <div id="title"></div>
+<div id="sub"></div>
 <script>
 const fps = window.__VIBE_FPS__ || 30;
 const scenes = [
-  { text: 'vibe-mpeg', start: 0, end: 100 },
-  { text: 'Open Video Editing', start: 100, end: 200 },
-  { text: 'Powered by Qwen3', start: 200, end: 300 },
+  { text: 'vibe-mpeg', sub: 'Open AI-driven Video Editing', start: 0, end: 90 },
+  { text: 'ffmpeg Skills', sub: 'concat / mix-audio / subtitles / transition / reformat', start: 90, end: 180 },
+  { text: 'Project Pipelines', sub: 'JSON-defined multi-step renders with ${prev.output} chaining', start: 180, end: 270 },
+  { text: 'Vertical Shorts', sub: '1080x1920 crop + scale — TikTok / YouTube Shorts ready', start: 270, end: 360 },
+  { text: 'Browser Editor', sub: 'localhost:3333 — media browser, timeline, preview', start: 360, end: 450 },
+  { text: 'No Cloud Required', sub: 'Offline-first. ffmpeg + Python. MIT License.', start: 450, end: 540 },
 ];
 
 const titleEl = document.getElementById('title');
+const subEl = document.getElementById('sub');
+const badgeEl = document.getElementById('badge');
 
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
 window.__VIBE_RENDER_FRAME__ = function(frame) {
+  // Badge always visible after first few frames
+  badgeEl.style.opacity = Math.min(1, frame / 15);
+
   const scene = scenes.find(s => frame >= s.start && frame < s.end);
   if (!scene) {
     titleEl.style.opacity = 0;
+    subEl.style.opacity = 0;
     return;
   }
 
@@ -50,6 +81,7 @@ window.__VIBE_RENDER_FRAME__ = function(frame) {
   const fadeFrames = Math.round(fps * 0.4);
 
   titleEl.textContent = scene.text;
+  subEl.textContent = scene.sub || '';
 
   let opacity = 1;
   let scale = 1;
@@ -64,6 +96,7 @@ window.__VIBE_RENDER_FRAME__ = function(frame) {
 
   titleEl.style.opacity = opacity;
   titleEl.style.transform = `scale(${scale})`;
+  subEl.style.opacity = opacity * 0.8;
 };
 
 if (typeof window.__VIBE_FRAME__ === 'number') {

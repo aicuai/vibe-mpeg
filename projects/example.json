@@ -1,0 +1,27 @@
+{
+  "name": "example",
+  "description": "PPSG Elena Bloom — lyric video with ASS subtitles and BGM mix",
+  "media_dir": "media",
+  "output_dir": "out",
+  "steps": [
+    {
+      "skill": "probe",
+      "params": { "file": "media/PPSG-ElenaBloom-lyric.mp4" }
+    },
+    {
+      "skill": "subtitles",
+      "params": {
+        "video": "media/PPSG-ElenaBloom-lyric.mp4",
+        "sub": "media/PPSG-ElenaBloom.ass"
+      }
+    },
+    {
+      "skill": "mix-audio",
+      "params": {
+        "video": "${prev.output}",
+        "audio": "media/PPSG-ElenaBloom.mp3",
+        "volume": 0.3
+      }
+    }
+  ]
+}

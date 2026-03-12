@@ -1,0 +1,23 @@
+{
+  "name": "PPSG-Elena",
+  "description": "Pico Pico Shooting Game - Elena Bloom Edition (ASS lyric overlay + audio replace)",
+  "media_dir": "media",
+  "output_dir": "out",
+  "steps": [
+    {
+      "skill": "subtitles",
+      "params": {
+        "video": "media/PPSG-ElenaBloom-lyric.mp4",
+        "sub": "media/PPSG-ElenaBloom.ass"
+      }
+    },
+    {
+      "skill": "mix-audio",
+      "params": {
+        "video": "${prev.output}",
+        "audio": "media/PPSG-ElenaBloom.mp3",
+        "replace": true
+      }
+    }
+  ]
+}

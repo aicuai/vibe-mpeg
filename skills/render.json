@@ -1,0 +1,11 @@
+{
+  "name": "render",
+  "description": "List available render skills or execute a skill by name",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "skill": { "type": "string", "description": "Skill name to execute (omit to list all)" },
+      "list": { "type": "boolean", "default": true, "description": "List available skills" }
+    }
+  }
+}

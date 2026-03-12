@@ -1,0 +1,35 @@
+{
+  "name": "VerticalShort",
+  "description": "Vertical short (1080x1920) — crop center from landscape, add lyrics, 30s clip for TikTok/Shorts",
+  "format": {
+    "width": 1080,
+    "height": 1920
+  },
+  "steps": [
+    {
+      "skill": "reformat",
+      "params": {
+        "video": "media/PPSG-ElenaBloom-lyric.mp4",
+        "in": 34.0,
+        "out": 64.0,
+        "crop": {"w": 608, "h": 1080, "x": 656, "y": 0},
+        "scale": {"w": 1080, "h": 1920}
+      }
+    },
+    {
+      "skill": "subtitles",
+      "params": {
+        "video": "${prev.output}",
+        "sub": "media/PPSG-ElenaBloom.ass"
+      }
+    },
+    {
+      "skill": "mix-audio",
+      "params": {
+        "video": "${prev.output}",
+        "audio": "media/PPSG-ElenaBloom.mp3",
+        "replace": true
+      }
+    }
+  ]
+}

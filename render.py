@@ -13,6 +13,7 @@ Usage:
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -33,7 +34,7 @@ def load_skill(name: str) -> dict:
 
 
 def ts_output(prefix: str = "output", ext: str = "mp4") -> str:
-    return str(OUT_DIR / datetime.now().strftime(f"{prefix}_%Y-%m-%d-%H%M.{ext}"))
+    return str(OUT_DIR / datetime.now().strftime(f"{prefix}-%m%d-%H%M.{ext}"))
 
 
 def ffprobe_duration(path: str) -> float:
@@ -114,19 +115,87 @@ def exec_mix_audio(params: dict) -> dict:
 
 def exec_subtitles(params: dict) -> dict:
     video = params["video"]
-    srt = params["srt"]
+    sub = params.get("srt") or params.get("sub") or params.get("ass")
     font = params.get("font", "Helvetica")
     font_size = params.get("fontSize", 24)
     output = params.get("output", ts_output("subtitled"))
     OUT_DIR.mkdir(exist_ok=True)
 
-    style = f"FontName={font},FontSize={font_size},PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2"
+    # Detect subtitle format by extension
+    sub_ext = Path(sub).suffix.lower()
+    if sub_ext == ".ass":
+        # ASS: use ass filter to preserve native styling
+        vf = f"ass={sub}"
+    else:
+        # SRT/VTT: use subtitles filter with force_style
+        style = f"FontName={font},FontSize={font_size},PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2"
+        vf = f"subtitles={sub}:force_style='{style}'"
+
     cmd = [
         "ffmpeg", "-y", "-i", video,
-        "-vf", f"subtitles={srt}:force_style='{style}'",
+        "-vf", vf,
         "-c:v", "libx264", "-crf", "23", "-c:a", "copy",
         output,
     ]
+
+    result = run_ffmpeg(cmd)
+    result["output"] = output
+    return result
+
+
+def exec_reformat(params: dict) -> dict:
+    """Crop, scale, trim, or speed-adjust a video."""
+    video = params["video"]
+    output = params.get("output", ts_output("reformat"))
+    OUT_DIR.mkdir(exist_ok=True)
+
+    filters = []
+    # Trim (in/out points)
+    input_args = []
+    if "in" in params:
+        input_args += ["-ss", str(params["in"])]
+    if "out" in params:
+        input_args += ["-to", str(params["out"])]
+    elif "duration" in params:
+        input_args += ["-t", str(params["duration"])]
+    # Crop
+    if "crop" in params:
+        c = params["crop"]
+        filters.append(f"crop={c['w']}:{c['h']}:{c.get('x',0)}:{c.get('y',0)}")
+    # Scale
+    if "scale" in params:
+        s = params["scale"]
+        filters.append(f"scale={s['w']}:{s['h']}")
+    # Speed
+    if "speed" in params:
+        spd = params["speed"]
+        filters.append(f"setpts={1/spd}*PTS")
+    # Rotate
+    if "rotate" in params:
+        deg = params["rotate"]
+        if deg == 90:
+            filters.append("transpose=1")
+        elif deg == 270 or deg == -90:
+            filters.append("transpose=2")
+        elif deg == 180:
+            filters.append("transpose=1,transpose=1")
+    # Pad (for letterbox/pillarbox)
+    if "pad" in params:
+        p = params["pad"]
+        filters.append(f"pad={p['w']}:{p['h']}:{p.get('x','(ow-iw)/2')}:{p.get('y','(oh-ih)/2')}:black")
+    # Fade
+    if "fade_in" in params:
+        filters.append(f"fade=t=in:st=0:d={params['fade_in']}")
+    if "fade_out" in params:
+        filters.append(f"fade=t=out:st={params.get('fade_out_start', 0)}:d={params['fade_out']}")
+    # Raw filter passthrough
+    if "filter" in params:
+        filters.append(params["filter"])
+
+    cmd = ["ffmpeg", "-y"] + input_args + ["-i", video]
+    if filters:
+        cmd += ["-vf", ",".join(filters)]
+    cmd += ["-c:v", "libx264", "-crf", str(params.get("crf", 23)), "-c:a", "aac", output]
 
     result = run_ffmpeg(cmd)
     result["output"] = output
@@ -263,15 +332,100 @@ def exec_probe(params: dict) -> dict:
     return info
 
 
+def exec_render(params: dict) -> dict:
+    """List available skills or show skill details."""
+    skill_name = params.get("skill")
+    if skill_name:
+        try:
+            defn = load_skill(skill_name)
+            return {"status": "success", "skill": defn}
+        except ValueError as e:
+            return {"status": "error", "message": str(e)}
+    # List all skills
+    skills = []
+    for p in sorted(SKILLS_DIR.glob("*.json")):
+        if p.stem == "render":
+            continue
+        defn = load_skill(p.stem)
+        skills.append({"name": p.stem, "description": defn.get("description", "")})
+    return {"status": "success", "skills": skills}
+
+
 EXECUTORS = {
     "concat": exec_concat,
     "mix-audio": exec_mix_audio,
     "subtitles": exec_subtitles,
     "transition": exec_transition,
     "probe": exec_probe,
+    "render": exec_render,
+    "reformat": exec_reformat,
 }
 
 TEMPLATE_SKILLS = {"demo", "slideshow", "text-overlay"}
+
+PROJECTS_DIR = ROOT / "projects"
+
+
+def exec_project(params: dict) -> dict:
+    """Run a project (sequence of skill steps) or list available projects."""
+    project_name = params.get("name") or params.get("project")
+    if not project_name:
+        # List projects
+        projects = []
+        if PROJECTS_DIR.is_dir():
+            for p in sorted(PROJECTS_DIR.glob("*.json")):
+                try:
+                    with open(p) as f:
+                        defn = json.load(f)
+                    projects.append({
+                        "name": p.stem,
+                        "description": defn.get("description", ""),
+                        "steps": len(defn.get("steps", [])),
+                    })
+                except (json.JSONDecodeError, OSError):
+                    pass
+        return {"status": "success", "projects": projects}
+
+    # Load and run project
+    project_path = PROJECTS_DIR / f"{project_name}.json"
+    if not project_path.exists():
+        available = [p.stem for p in PROJECTS_DIR.glob("*.json")] if PROJECTS_DIR.is_dir() else []
+        return {"status": "error", "message": f"Unknown project: {project_name}. Available: {available}"}
+
+    with open(project_path) as f:
+        project = json.load(f)
+
+    results = []
+    prev_result = {}
+    for i, step in enumerate(project.get("steps", [])):
+        skill_name = step["skill"]
+        step_params = dict(step.get("params", {}))
+        # Resolve ${prev.output} references
+        for k, v in step_params.items():
+            if isinstance(v, str) and "${prev.output}" in v:
+                prev_output = prev_result.get("output", "")
+                step_params[k] = v.replace("${prev.output}", prev_output)
+        print(f"[{i+1}/{len(project['steps'])}] {skill_name}", file=sys.stderr)
+        result = execute_skill(skill_name, step_params)
+        results.append({"step": i + 1, "skill": skill_name, "result": result})
+        prev_result = result
+        if result.get("status") == "error":
+            return {"status": "error", "message": f"Step {i+1} ({skill_name}) failed", "results": results}
+
+    # Rename final output to {project}-{MMDD}-{HHMM}.mp4
+    final_output = prev_result.get("output", "")
+    if final_output and os.path.isfile(final_output):
+        ext = Path(final_output).suffix
+        renamed = str(OUT_DIR / datetime.now().strftime(f"{project_name}-%m%d-%H%M{ext}"))
+        os.rename(final_output, renamed)
+        prev_result["output"] = renamed
+        results[-1]["result"]["output"] = renamed
+        print(f"[output] {renamed}", file=sys.stderr)
+
+    return {"status": "success", "project": project_name, "output": prev_result.get("output", ""), "results": results}
+
+
+EXECUTORS["project"] = exec_project
 
 
 def execute_skill(name: str, params: dict) -> dict:

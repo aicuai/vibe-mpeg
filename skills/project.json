@@ -1,0 +1,10 @@
+{
+  "name": "project",
+  "description": "Run a project pipeline or list available projects",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string", "description": "Project name to run (omit to list all)" }
+    }
+  }
+}

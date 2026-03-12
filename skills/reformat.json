@@ -1,0 +1,25 @@
+{
+  "name": "reformat",
+  "description": "Crop, scale, trim, speed-adjust, or pad a video",
+  "ffmpeg": true,
+  "parameters": {
+    "type": "object",
+    "required": ["video"],
+    "properties": {
+      "video": { "type": "string", "description": "Input video file path" },
+      "in": { "type": "number", "description": "In-point (seconds)" },
+      "out": { "type": "number", "description": "Out-point (seconds)" },
+      "duration": { "type": "number", "description": "Duration (seconds, alternative to out)" },
+      "crop": { "type": "object", "description": "{w, h, x, y} crop region" },
+      "scale": { "type": "object", "description": "{w, h} target resolution" },
+      "pad": { "type": "object", "description": "{w, h, x, y} padding (letterbox/pillarbox)" },
+      "speed": { "type": "number", "description": "Playback speed (0.5=half, 2.0=double)" },
+      "rotate": { "type": "number", "description": "Rotation: 90, 180, 270" },
+      "fade_in": { "type": "number", "description": "Fade-in duration (seconds)" },
+      "fade_out": { "type": "number", "description": "Fade-out duration (seconds)" },
+      "filter": { "type": "string", "description": "Raw ffmpeg filter expression" },
+      "crf": { "type": "number", "default": 23, "description": "Quality (lower=better, 18-28)" },
+      "output": { "type": "string", "description": "Output file path" }
+    }
+  }
+}

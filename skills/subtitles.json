@@ -1,16 +1,17 @@
 {
   "name": "subtitles",
-  "description": "Burn SRT subtitles into a video",
+  "description": "Burn subtitles (SRT/ASS/VTT) into a video",
   "ffmpeg": true,
   "parameters": {
     "type": "object",
-    "required": ["video", "srt"],
+    "required": ["video", "sub"],
     "properties": {
       "video": { "type": "string", "description": "Input video file path" },
-      "srt": { "type": "string", "description": "SRT subtitle file path" },
-      "font": { "type": "string", "default": "Helvetica", "description": "Font name" },
-      "fontSize": { "type": "number", "default": 24, "description": "Font size" },
-      "fontColor": { "type": "string", "default": "white", "description": "Font color" },
+      "sub": { "type": "string", "description": "Subtitle file path (.srt, .ass, .vtt)" },
+      "srt": { "type": "string", "description": "Alias for sub (backward compat)" },
+      "ass": { "type": "string", "description": "Alias for sub (backward compat)" },
+      "font": { "type": "string", "default": "Helvetica", "description": "Font name (SRT only)" },
+      "fontSize": { "type": "number", "default": 24, "description": "Font size (SRT only)" },
       "output": { "type": "string", "description": "Output file path" }
     }
   }
