@@ -1,95 +1,117 @@
 # vibe-mpeg
 
-**本当にオープンなコーディングAI駆動の動画編集環境**
+**Open AI-driven Video Editing — No Cloud Required**
 
-プロプライエタリなAPIもクラウドサービスも不要。飛行機の中でもサーバーでも動く、ローカルファーストの動画編集ツール。
+ローカルで完結する、AI駆動のオープンソース動画編集ツール。ffmpeg + Python + LLM。
+
+> プロプライエタリなAPIもクラウドサービスも不要。飛行機の中でもサーバーでも動く。
+
+---
+
+## Features
+
+- **ffmpeg Skills** — 動画結合 / 音声ミキシング / 字幕(SRT/ASS) / トランジション / リフォーマット
+- **Project Pipelines** — JSON定義のマルチステップレンダリング、`${prev.output}` チェイニング
+- **Browser Editor** — `localhost:3333` でメディアブラウザ / タイムライン / プレビュー
+- **Vertical Shorts** — 1080x1920 クロップ＆スケール、TikTok / YouTube Shorts 対応
+- **Offline-first** — Ollama + Qwen3 でAI対話。Claude不要、API不要
 
 ## Quick Start
 
 ```bash
-# 初回チュートリアル（環境チェック→動画結合→音声ミキシング→字幕→トランジション）
+git clone https://github.com/aicuai/vibe-mpeg.git
+cd vibe-mpeg
+
+# 対話チュートリアル（環境チェック → 動画結合 → 音声 → 字幕 → トランジション）
 python3 tutorial.py
+
+# ブラウザエディタ起動
+python3 server.py          # → http://localhost:3333
 ```
 
-チュートリアルが対話的にガイドします：
+## Skills
 
-1. 環境チェック（Python, ffmpeg, Playwright, Ollama, vibe-local）
-2. 不足ツールのインストール
-3. 動画ファイルの結合
-4. メディアソースの指定
-5. タイムスタンプ付きレンダリング (`YYYY-MM-DD-HHmm.mp4`)
-6. MP3の追加とオーディオミキシング
-7. SRT字幕の作成と焼き込み
-8. トランジションエフェクト
-
-## コンセプト
-
-- **完全オフライン** — Ollama + Qwen3 で AI駆動の動画編集。Claude不要
-- **ライセンスがクリーン** — プロプライエタリ製品を使わない。ffmpegを外部コマンドとして呼び出すのみ
-- **Mac専用** — macOSにインストール済みのツール・フォントを活用
-- **スキルベース** — ffmpegの機能をJSON定義のスキルとしてLLMから呼び出し
-
-## スキル一覧
-
-| スキル | 説明 | ffmpegコマンド |
+| Skill | Description | Example |
 |---|---|---|
-| `concat` | 動画ファイルの結合 | `-f concat` |
-| `mix-audio` | 音声ミキシング（BGM追加） | `amix` / `volume` |
-| `subtitles` | SRT字幕の焼き込み | `subtitles` filter |
-| `transition` | トランジションエフェクト | `xfade` / `acrossfade` |
-| `demo` | デモ動画生成 | Playwright + ffmpeg |
-| `slideshow` | スライドショー生成 | Playwright + ffmpeg |
-| `text-overlay` | テキストアニメーション | Playwright + ffmpeg |
+| `concat` | 動画結合 | `python3 render.py concat --files '["a.mp4","b.mp4"]'` |
+| `mix-audio` | 音声ミキシング / 置換 | `python3 render.py mix-audio --video X --audio Y --replace` |
+| `subtitles` | SRT/ASS/VTT 字幕焼き込み | `python3 render.py subtitles --video X --sub Y` |
+| `transition` | トランジション | `python3 render.py transition --video1 X --video2 Y` |
+| `reformat` | クロップ / スケール / トリム / 速度変更 | `python3 render.py reformat --video X --crop '{"w":608,"h":1080}'` |
+| `probe` | メディア情報取得 | `python3 render.py probe --file X` |
+| `project` | プロジェクトパイプライン実行 | `python3 render.py project --name VerticalShort` |
+| `demo` | デモ動画生成 (Playwright) | `python3 render.py demo` |
 
-## 使い方
+## Project Pipelines
 
-```bash
-# 動画を結合
-python3 render.py concat --files '["a.mp4", "b.mp4"]'
+`projects/*.json` にパイプラインを定義。ステップを順番に実行し、`${prev.output}` で前ステップの出力を次のステップに渡す。
 
-# BGMを追加（音量0.3）
-python3 render.py mix-audio --video input.mp4 --audio bgm.mp3 --volume 0.3
-
-# 字幕を焼き込み
-python3 render.py subtitles --video input.mp4 --srt captions.srt
-
-# トランジション（2つの動画をフェードで繋ぐ）
-python3 render.py transition --video1 a.mp4 --video2 b.mp4 --effect fade --duration 1
-
-# Qwen3と対話しながら編集
-python3 qwen3-bridge.py
-
-# スキル一覧
-python3 render.py --list
+```json
+{
+  "name": "VerticalShort",
+  "description": "Vertical short (1080x1920) — TikTok/Shorts ready",
+  "format": { "width": 1080, "height": 1920 },
+  "steps": [
+    { "skill": "reformat", "params": { "video": "media/source.mp4", "in": 34.0, "out": 64.0, "crop": {"w":608,"h":1080,"x":656,"y":0}, "scale": {"w":1080,"h":1920} }},
+    { "skill": "subtitles", "params": { "video": "${prev.output}", "sub": "media/lyrics.ass" }},
+    { "skill": "mix-audio", "params": { "video": "${prev.output}", "audio": "media/track.mp3", "replace": true }}
+  ]
+}
 ```
 
-## アーキテクチャ
+出力: `out/{ProjectName}-{MMDD}-{HHMM}.mp4`
+
+## Browser Editor
 
 ```
-ユーザー → Qwen3 (Ollama) → スキルJSON → render.py → ffmpeg → MP4
+python3 server.py
+```
+
+Remotion Studio インスパイアのダークテーマUI:
+
+| Area | Function |
+|---|---|
+| Left sidebar | メディアブラウザ（アップロード / リネーム / 削除） |
+| Center | プレビュープレーヤー |
+| Right sidebar | ファイル情報 / スキル一覧 |
+| Bottom | タイムライン（ドラッグ＆ドロップ並替 / ステップ編集 / 保存） |
+
+## Architecture
+
+```
+User → LLM (Ollama/Qwen3) → Skill JSON → render.py → ffmpeg → MP4
                                               │
-                                    スキル定義 (skills/*.json)
-                                    ffmpegコマンドのラッパー
+                                    skills/*.json (skill definitions)
+                                    projects/*.json (pipelines)
+                                    server.py (browser editor)
 ```
 
-## 依存関係
+## Dependencies
 
-| コンポーネント | ライセンス | 利用形態 | 必須 |
-|---|---|---|---|
-| ffmpeg | GPL/LGPL | 外部コマンド呼び出しのみ | Yes |
-| Python 3.12+ | PSF | ランタイム | Yes |
-| Playwright | MIT (Microsoft) | HTMLテンプレート用 | Optional |
-| Ollama | MIT | AI対話用 | Optional |
-| Qwen3 | Apache 2.0 (Alibaba) | Ollama経由 | Optional |
-| vibe-local | MIT | 自動検出 | Optional |
+| Component | License | Required |
+|---|---|---|
+| ffmpeg | GPL/LGPL | Yes (external command only) |
+| Python 3.12+ | PSF | Yes |
+| Playwright | MIT | Optional (template skills) |
+| Ollama | MIT | Optional (AI chat) |
+| Qwen3 | Apache 2.0 | Optional (via Ollama) |
 
-## 開発方針
+## Roadmap
 
-- ffmpegのコマンドを順次スキル化していく
-- 動画編集が一通りできたら vibe-local の外部化を完了しリポジトリを軽量化
-- テンプレート系スキル（Playwright依存）は段階的にffmpegのdrawtext等に移行検討
-- Qwen3以外のOllama対応モデルでも動作可能
+開発中の機能は [Issues](https://github.com/aicuai/vibe-mpeg/issues) で追跡しています。
+
+改善要望・バグ報告は Issue にお寄せください。
+
+## Dev Blog
+
+| Date | Topic |
+|---|---|
+| 2026-03-12 | Initial release — skills, project pipelines, browser editor, vertical shorts |
 
 ## License
 
 MIT
+
+---
+
+Built with ffmpeg, Python, and vibes.

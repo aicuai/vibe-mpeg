@@ -1,5 +1,17 @@
 # vibe-mpeg Agent Instructions
 
+## Philosophy
+
+This is an open-source project built with craftsmanship and volunteer spirit.
+Be kind, helpful, and welcoming to contributors. Write code that is clear and
+approachable — good tools should feel good to use.
+
+When working on this project:
+- Prioritize clarity over cleverness
+- Make the codebase easy for newcomers to understand
+- Improve documentation and AGENTS.md iteratively as the project evolves
+- Treat every improvement request (Issue) with care and respect
+
 ## Overview
 
 vibe-mpeg is an open, offline-first video editing environment driven by local LLMs.
@@ -37,6 +49,7 @@ Skills are defined in `skills/*.json`. Each wraps an ffmpeg operation.
 | `mix-audio` | `python3 render.py mix-audio --video X --audio Y` |
 | `subtitles` | `python3 render.py subtitles --video X --sub Y` (SRT/ASS/VTT) |
 | `transition` | `python3 render.py transition --video1 X --video2 Y --effect fade` |
+| `reformat` | `python3 render.py reformat --video X` (crop/scale/trim/speed) |
 | `probe` | `python3 render.py probe --file X` |
 | `demo` | `python3 render.py demo` |
 | `slideshow` | `python3 render.py slideshow --slides '[...]'` |
@@ -84,9 +97,9 @@ Project definitions live in `projects/*.json`. Each project is a pipeline of ski
 }
 ```
 
-### Step Parameters (planned)
+### Step Parameters
 
-Each step can include ffmpeg-level parameters:
+Each step can include ffmpeg-level parameters (implemented items marked with check):
 
 | Parameter | Type | Description |
 |---|---|---|
@@ -107,7 +120,7 @@ Each step can include ffmpeg-level parameters:
 | `filter` | string | Raw ffmpeg filter expression |
 | `${prev.output}` | — | Reference previous step's output file |
 
-### Format Presets (planned)
+### Format Presets
 
 | Preset | Resolution | Use Case |
 |---|---|---|
@@ -153,3 +166,4 @@ Each managed directory contains a `readme.txt` warning that files may be modifie
 - No proprietary dependencies.
 - vibe-local is detected automatically if installed nearby, not bundled.
 - The `demo` project always produces the latest README video explaining vibe-mpeg.
+- Improvement requests are tracked as [GitHub Issues](https://github.com/aicuai/vibe-mpeg/issues). When adding new features or fixing bugs, check open issues for context and close them when resolved.
