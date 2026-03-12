@@ -197,11 +197,78 @@ def exec_template(name: str, params: dict) -> dict:
         return {"status": "error", "message": str(e)}
 
 
+def exec_probe(params: dict) -> dict:
+    file = params["file"]
+    show_streams = params.get("streams", True)
+    show_tags = params.get("tags", True)
+
+    cmd = [
+        "ffprobe", "-v", "quiet", "-print_format", "json",
+        "-show_format",
+    ]
+    if show_streams:
+        cmd.append("-show_streams")
+    cmd.append(file)
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        return {"status": "error", "message": result.stderr[-1000:]}
+
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return {"status": "error", "message": "Failed to parse ffprobe output"}
+
+    # Build clean response
+    info = {"status": "success", "file": file}
+
+    fmt = data.get("format", {})
+    info["format"] = {
+        "filename": fmt.get("filename"),
+        "format_name": fmt.get("format_name"),
+        "duration": float(fmt["duration"]) if "duration" in fmt else None,
+        "size_bytes": int(fmt["size"]) if "size" in fmt else None,
+        "bit_rate": int(fmt["bit_rate"]) if "bit_rate" in fmt else None,
+    }
+
+    if show_tags and "tags" in fmt:
+        info["tags"] = fmt["tags"]
+
+    if show_streams and "streams" in data:
+        info["streams"] = []
+        for s in data["streams"]:
+            stream = {
+                "index": s.get("index"),
+                "codec_type": s.get("codec_type"),
+                "codec_name": s.get("codec_name"),
+            }
+            if s.get("codec_type") == "audio":
+                stream.update({
+                    "sample_rate": s.get("sample_rate"),
+                    "channels": s.get("channels"),
+                    "channel_layout": s.get("channel_layout"),
+                    "bit_rate": s.get("bit_rate"),
+                })
+            elif s.get("codec_type") == "video":
+                stream.update({
+                    "width": s.get("width"),
+                    "height": s.get("height"),
+                    "fps": s.get("r_frame_rate"),
+                    "pix_fmt": s.get("pix_fmt"),
+                })
+            if show_tags and "tags" in s:
+                stream["tags"] = s["tags"]
+            info["streams"].append(stream)
+
+    return info
+
+
 EXECUTORS = {
     "concat": exec_concat,
     "mix-audio": exec_mix_audio,
     "subtitles": exec_subtitles,
     "transition": exec_transition,
+    "probe": exec_probe,
 }
 
 TEMPLATE_SKILLS = {"demo", "slideshow", "text-overlay"}

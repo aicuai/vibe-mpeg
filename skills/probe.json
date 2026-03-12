@@ -1,0 +1,14 @@
+{
+  "name": "probe",
+  "description": "Get media file metadata as JSON (duration, codec, bitrate, tags, etc.)",
+  "ffmpeg": true,
+  "parameters": {
+    "type": "object",
+    "required": ["file"],
+    "properties": {
+      "file": { "type": "string", "description": "Media file path (MP3, MP4, etc.)" },
+      "streams": { "type": "boolean", "default": true, "description": "Include stream details (video/audio codec, sample rate, etc.)" },
+      "tags": { "type": "boolean", "default": true, "description": "Include metadata tags (title, artist, album, etc.)" }
+    }
+  }
+}
