@@ -1,3 +1,8 @@
+---
+name: tutorial
+description: Run the vibe-mpeg interactive tutorial for environment setup and video editing walkthrough
+---
+
 Run the vibe-mpeg interactive tutorial in auto mode. Execute:
 
 ```
