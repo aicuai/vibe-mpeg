@@ -1,0 +1,21 @@
+{
+  "name": "transition",
+  "description": "Apply transition effect between two video clips using xfade",
+  "ffmpeg": true,
+  "parameters": {
+    "type": "object",
+    "required": ["video1", "video2"],
+    "properties": {
+      "video1": { "type": "string", "description": "First video file path" },
+      "video2": { "type": "string", "description": "Second video file path" },
+      "effect": {
+        "type": "string",
+        "default": "fade",
+        "enum": ["fade", "wipeleft", "wiperight", "wipeup", "wipedown", "slideleft", "slideright", "slideup", "slidedown", "circlecrop", "rectcrop", "distance", "fadeblack", "fadewhite", "radial", "smoothleft", "smoothright", "dissolve"],
+        "description": "Transition effect name"
+      },
+      "duration": { "type": "number", "default": 1, "description": "Transition duration in seconds" },
+      "output": { "type": "string", "description": "Output file path" }
+    }
+  }
+}

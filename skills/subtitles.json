@@ -1,0 +1,17 @@
+{
+  "name": "subtitles",
+  "description": "Burn SRT subtitles into a video",
+  "ffmpeg": true,
+  "parameters": {
+    "type": "object",
+    "required": ["video", "srt"],
+    "properties": {
+      "video": { "type": "string", "description": "Input video file path" },
+      "srt": { "type": "string", "description": "SRT subtitle file path" },
+      "font": { "type": "string", "default": "Helvetica", "description": "Font name" },
+      "fontSize": { "type": "number", "default": 24, "description": "Font size" },
+      "fontColor": { "type": "string", "default": "white", "description": "Font color" },
+      "output": { "type": "string", "description": "Output file path" }
+    }
+  }
+}

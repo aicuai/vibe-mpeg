@@ -1,0 +1,16 @@
+{
+  "name": "mix-audio",
+  "description": "Mix an audio file (BGM, narration) into a video",
+  "ffmpeg": true,
+  "parameters": {
+    "type": "object",
+    "required": ["video", "audio"],
+    "properties": {
+      "video": { "type": "string", "description": "Input video file path" },
+      "audio": { "type": "string", "description": "Audio file path (MP3, WAV, etc.)" },
+      "volume": { "type": "number", "default": 0.3, "description": "Volume level for added audio (0.0-1.0)" },
+      "output": { "type": "string", "description": "Output file path" },
+      "replace": { "type": "boolean", "default": false, "description": "Replace original audio instead of mixing" }
+    }
+  }
+}
