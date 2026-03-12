@@ -11,8 +11,15 @@ Guides the user through:
   6. Audio mixing
   7. Subtitle creation
   8. Transition effects
+
+Modes:
+  python3 tutorial.py            # Interactive (terminal)
+  python3 tutorial.py --auto     # Non-interactive, use defaults
+  python3 tutorial.py --step 1   # Run single step
+  python3 tutorial.py --step 1-3 # Run step range
 """
 
+import argparse
 import json
 import os
 import shutil
@@ -35,24 +42,34 @@ CYAN = "\033[36m"
 DIM = "\033[2m"
 RESET = "\033[0m"
 
+# --- Auto mode flag ---
+AUTO_MODE = False
+
 
 def ask(prompt: str, default: str = "") -> str:
+    if AUTO_MODE:
+        print(f"{prompt} [{default}]: {DIM}(auto){RESET}")
+        return default
     suffix = f" [{default}]" if default else ""
     try:
         val = input(f"{prompt}{suffix}: ").strip()
     except (EOFError, KeyboardInterrupt):
         print()
-        sys.exit(0)
+        return default
     return val or default
 
 
 def ask_yn(prompt: str, default: bool = True) -> bool:
+    if AUTO_MODE:
+        ans = "yes" if default else "no"
+        print(f"{prompt} {DIM}(auto: {ans}){RESET}")
+        return default
     hint = "Y/n" if default else "y/N"
     try:
         val = input(f"{prompt} [{hint}] ").strip().lower()
     except (EOFError, KeyboardInterrupt):
         print()
-        sys.exit(0)
+        return default
     if not val:
         return default
     return val.startswith("y")
@@ -171,7 +188,8 @@ def step_install(tools: dict):
             tools["ffprobe"] = shutil.which("ffprobe")
         else:
             print(f"  {RED}ffmpeg is required. Install manually and retry.{RESET}")
-            sys.exit(1)
+            if not AUTO_MODE:
+                sys.exit(1)
 
 
 # ============================================================
@@ -203,7 +221,6 @@ def step_concat(config: dict):
 
     print(f"  Found {len(mp4s)} files:")
     for f in mp4s:
-        # Get duration with ffprobe
         result = subprocess.run(
             ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", str(f)],
             capture_output=True, text=True,
@@ -582,17 +599,73 @@ def step_transitions(config: dict):
 
 
 # ============================================================
-# Main Tutorial
+# Step Registry
+# ============================================================
+ALL_STEPS = {
+    1: ("Environment Check", lambda c, v: (step_check_env(), v)),
+    2: ("Install Missing Tools", lambda c, v: (step_install(step_check_env()), v)),
+    3: ("Video Concatenation", lambda c, v: (None, step_concat(c))),
+    4: ("Media Source Directory", lambda c, v: (step_media_dir(c), v)),
+    5: ("Render", lambda c, v: (None, step_render(c, v))),
+    6: ("Audio Mixing", lambda c, v: (None, step_audio_mix(c, v))),
+    7: ("Subtitles", lambda c, v: (None, step_subtitles(c, v))),
+    8: ("Transition Effects", lambda c, v: (step_transitions(c), v)),
+}
+
+
+def parse_step_range(s: str) -> list[int]:
+    """Parse '3', '1-3', '1,3,5' into list of step numbers."""
+    steps = []
+    for part in s.split(","):
+        part = part.strip()
+        if "-" in part:
+            a, b = part.split("-", 1)
+            steps.extend(range(int(a), int(b) + 1))
+        else:
+            steps.append(int(part))
+    return [s for s in steps if 1 <= s <= 8]
+
+
+# ============================================================
+# Main
 # ============================================================
 def main():
+    global AUTO_MODE
+
+    parser = argparse.ArgumentParser(description="vibe-mpeg tutorial")
+    parser.add_argument("--auto", action="store_true",
+                        help="Non-interactive mode, use all defaults")
+    parser.add_argument("--step", type=str,
+                        help="Run specific step(s): '1', '1-3', '1,3,5'")
+    parser.add_argument("--media", type=str,
+                        help="Set media directory")
+    args = parser.parse_args()
+
+    AUTO_MODE = args.auto
+
     print()
     print(f"{BOLD}{'=' * 50}{RESET}")
     print(f"{BOLD}  vibe-mpeg Tutorial{RESET}")
     print(f"{BOLD}  Open AI-driven Video Editing{RESET}")
+    if AUTO_MODE:
+        print(f"{DIM}  (auto mode){RESET}")
     print(f"{BOLD}{'=' * 50}{RESET}")
 
     config = load_config()
+    if args.media:
+        config["media_dir"] = str(Path(args.media).expanduser().resolve())
 
+    if args.step:
+        # Run specific steps
+        steps = parse_step_range(args.step)
+        result_video = None
+        for s in steps:
+            if s in ALL_STEPS:
+                _, result_video = ALL_STEPS[s][1](config, result_video)
+        save_config(config)
+        return
+
+    # Full tutorial
     # Step 1: Check
     tools = step_check_env()
 

@@ -1,1 +1,13 @@
-Run the vibe-mpeg interactive tutorial. Execute `python3 tutorial.py` in the project root and help the user through each step. If any step fails, diagnose and fix the issue before proceeding.
+Run the vibe-mpeg interactive tutorial in auto mode. Execute:
+
+```
+python3 tutorial.py --auto
+```
+
+For specific steps, use --step:
+```
+python3 tutorial.py --auto --step 1    # Environment check only
+python3 tutorial.py --auto --step 1-3  # Steps 1 through 3
+```
+
+Steps: 1=env check, 2=install, 3=concat, 4=media dir, 5=render, 6=audio mix, 7=subtitles, 8=transitions
